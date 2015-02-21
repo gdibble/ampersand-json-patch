@@ -35,7 +35,7 @@ myCar.model = 'Civic';
 
 Generates the following HTTP PATCH request to `/api/cars/1`:
 
-```json
+```javascript
 [ { op: 'replace', path: '/model', value: 'Civic' } ]
 ```
 
