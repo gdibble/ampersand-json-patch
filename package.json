@@ -1,0 +1,28 @@
+{
+  "name": "ampersand-json-patch",
+  "version": "1.0.0",
+  "description": "Adds JSON Patch (RFC 6902) support to Ampersand models.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/winduptoy/ampersand-json-patch.git"
+  },
+  "keywords": [
+    "ampersand",
+    "json",
+    "patch"
+  ],
+  "author": "Matt Reyer",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/winduptoy/ampersand-json-patch/issues"
+  },
+  "homepage": "https://github.com/winduptoy/ampersand-json-patch",
+  "dependencies": {
+    "browserify-zepto": "^1.1.4",
+    "fast-json-patch": "^0.5.1"
+  }
+}
