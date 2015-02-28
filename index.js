@@ -11,7 +11,34 @@ var jsonpatch = require('fast-json-patch');
 var $ = require('browserify-zepto');
 
 module.exports = {
-	patch: function(patches) {
+	initialize: function(options) {
+		var self = this;
+
+		//Save a previous version of this object
+		this.previousState = this.toJSON();
+
+		//Listen to own properties
+		this.on('change', patch);
+
+		//Listen to children
+		var childNames = Object.keys(this._children);
+		for(var i = 0; i < childNames.length; i++) {
+			this.listenTo(this[childNames[i]], 'add remove', patch);
+		}
+
+		//Clear event listeners
+		this.on('remove', function() {
+			self.off('change remove');
+			self.stopListening();
+		});
+
+		function patch() {
+			this.sendPatches(jsonpatch.compare(this.previousState, this.toJSON()));
+			this.previousState = this.toJSON();
+		}
+	},
+
+	sendPatches: function(patches) {
 		if(patches.length == 0) return;
 
 		var self = this;
@@ -29,24 +56,6 @@ module.exports = {
 			error: function(xhr, type) {
 				console.log('ERR', xhr, type);
 			}
-		});
-	},
-	initialize: function(options) {
-		var self = this;
-
-		//Save a previous version of this object
-		this.previousState = this.toJSON();
-
-		//Patch changes to the server
-		this.on('change', function() {
-			self.patch(jsonpatch.compare(self.previousState, this.toJSON()));
-			self.previousState = this.toJSON();
-		});
-
-		//Clear event listeners
-		this.on('remove', function() {
-			self.off('change');
-			self.off('remove');
 		});
 	},
 };
