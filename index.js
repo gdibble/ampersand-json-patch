@@ -20,10 +20,10 @@ module.exports = {
 		//Listen to own properties
 		this.on('change', patch);
 
-		//Listen to children
-		var childNames = Object.keys(this._children);
-		for(var i = 0; i < childNames.length; i++) {
-			this.listenTo(this[childNames[i]], 'add remove', patch);
+		//Listen to collections
+		var collectionNames = Object.keys(this._collections);
+		for(var i = 0; i < collectionNames.length; i++) {
+			this.listenTo(this[collectionNames[i]], 'add remove change', patch);
 		}
 
 		//Clear event listeners
