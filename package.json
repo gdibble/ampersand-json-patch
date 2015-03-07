@@ -1,6 +1,6 @@
 {
   "name": "ampersand-json-patch",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Adds JSON Patch (RFC 6902) support to Ampersand models.",
   "main": "index.js",
   "scripts": {

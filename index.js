@@ -11,37 +11,42 @@ var jsonpatch = require('fast-json-patch');
 var $ = require('browserify-zepto');
 
 module.exports = {
-	initialize: function(options) {
-		var self = this;
+	initPatcher: function(options) {
+		options = options || {};
 
 		//Save a previous version of this object
-		this.previousState = this.toJSON();
+		this._previousState = this.toJSON();
 
-		//Listen to own properties
-		this.on('change', patch);
+		//Optionally enable listeners
+		if(options.listeners) {
+			var self = this;
 
-		//Listen to collections
-		var collectionNames = Object.keys(this._collections);
-		for(var i = 0; i < collectionNames.length; i++) {
-			this.listenTo(this[collectionNames[i]], 'add remove change', patch);
-		}
+			//Listen to own properties
+			this.on('change', patch);
 
-		//Clear event listeners
-		this.on('remove', function() {
-			self.off('change remove');
-			self.stopListening();
-		});
+			//Listen to collections
+			var collectionNames = Object.keys(this._collections);
+			for(var i = 0; i < collectionNames.length; i++) {
+				this.listenTo(this[collectionNames[i]], 'add remove change', patch);
+			}
 
-		function patch() {
-			this.sendPatches(jsonpatch.compare(this.previousState, this.toJSON()));
-			this.previousState = this.toJSON();
+			//Clear event listeners
+			this.on('remove', function() {
+				self.off('change remove');
+				self.stopListening();
+			});
 		}
 	},
 
-	sendPatches: function(patches) {
-		if(patches.length == 0) return;
-
+	patch: function(options) {
 		var self = this;
+		
+		var patches = jsonpatch.compare(this._previousState, this.toJSON());
+
+		if(patches.length === 0) {
+			if(typeof options.success == 'function') options.success();
+			return;
+		}
 
 		$.ajax({
 			type: 'PATCH',
@@ -50,12 +55,21 @@ module.exports = {
 			processData: false,
 			contentType: 'application/json',
 			dataType: 'json',
-			success: function(response) {
+			success: function(response, status) {
+				self._previousState = self.toJSON();
 				self.trigger('sync', self, response);
+
+				if(typeof options.success == 'function') options.success(response);
+
+				return;
 			},
-			error: function(xhr, type) {
-				console.log('ERR', xhr, type);
-			}
+			error: function(xhr, type, error) {
+				self.trigger('error', self, error);
+
+				if(typeof options.error == 'function') options.error(error);
+
+				return;
+			},
 		});
 	},
 };
