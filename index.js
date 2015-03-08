@@ -30,12 +30,29 @@ module.exports = {
 				this.listenTo(this[collectionNames[i]], 'add remove change', patch);
 			}
 
-			//Clear event listeners
-			this.on('remove', function() {
-				self.off('change remove');
-				self.stopListening();
-			});
+		} else {
+			var self = this;
+			
+			//Listen to collections and emit events
+			var collectionNames = Object.keys(this._collections);
+			for(var i = 0; i < collectionNames.length; i++) {
+				this.listenTo(this[collectionNames[i]], 'add', function() {
+					self.trigger('add');
+				});
+				this.listenTo(this[collectionNames[i]], 'remove', function() {
+					self.trigger('remove');
+				});
+				this.listenTo(this[collectionNames[i]], 'change', function() {
+					self.trigger('change');
+				});
+			}
 		}
+
+		//Clear event listeners
+		this.on('remove', function() {
+			self.off('change remove');
+			self.stopListening();
+		});
 	},
 
 	patch: function(options) {
