@@ -9,6 +9,7 @@
 
 var jsonpatch = require('fast-json-patch');
 var $ = require('browserify-zepto');
+var _ = require('lodash');
 
 module.exports = {
 	initPatcher: function(options) {
@@ -16,6 +17,7 @@ module.exports = {
 
 		//Save a previous version of this object
 		this._previousState = this.toJSON();
+		this._pendingPatches = [];
 
 		//Optionally enable listeners
 		if(options.listeners) {
@@ -36,14 +38,18 @@ module.exports = {
 			//Listen to collections and emit events
 			var collectionNames = Object.keys(this._collections);
 			for(var i = 0; i < collectionNames.length; i++) {
-				this.listenTo(this[collectionNames[i]], 'add', function() {
-					self.trigger('add');
-				});
-				this.listenTo(this[collectionNames[i]], 'remove', function() {
-					self.trigger('remove');
-				});
-				this.listenTo(this[collectionNames[i]], 'change', function() {
+				this.listenTo(this[collectionNames[i]], 'add change', function() {
 					self.trigger('change');
+				});
+
+				/*
+				 * Ideally this is not necessary, see here: https://github.com/Starcounter-Jack/JSON-Patch/issues/65
+				 * You'll have to generate your own remove patches
+				 */
+				
+				this.listenTo(this[collectionNames[i]], 'remove', function() {
+					self.trigger('change');
+					self._previousState = self.toJSON(); //Silently update the previous state
 				});
 			}
 		}
@@ -52,10 +58,16 @@ module.exports = {
 		this.on('remove', function() {
 			self.off('change remove');
 			self.stopListening();
-		});
+		});	
+
+		var initialSync = function() {
+			this.off('sync', initialSync);
+			this._previousState = this.toJSON();
+		}
+		this.on('sync', initialSync);
 	},
 
-	patch: function(options) {
+	patch: _.debounce(function(options) {
 		var self = this;
 		
 		var patches = jsonpatch.compare(this._previousState, this.toJSON());
@@ -73,7 +85,6 @@ module.exports = {
 			contentType: 'application/json',
 			dataType: 'json',
 			success: function(response, status) {
-				self._previousState = self.toJSON();
 				self.trigger('sync', self, response);
 
 				if(typeof options.success == 'function') options.success(response);
@@ -88,5 +99,8 @@ module.exports = {
 				return;
 			},
 		});
-	},
+
+
+		self._previousState = self.toJSON();
+	}, 500)
 };
