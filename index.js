@@ -81,9 +81,13 @@ module.exports = {
 			return;
 		}
 
+		var url;
+		if(_.isFunction(this.url)) url = this.url();
+		else url = this.url;
+
 		$.ajax({
 			type: 'PATCH',
-			url: this.url(),
+			url: url,
 			data: JSON.stringify(patches),
 			processData: false,
 			contentType: 'application/json',
