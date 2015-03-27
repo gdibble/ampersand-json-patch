@@ -15,14 +15,14 @@ module.exports = {
 	initPatcher: function(options) {
 		options = options || {};
 
+		var self = this;
+
 		//Save a previous version of this object
 		this._previousState = this.toJSON();
 		this._pendingPatches = [];
 
 		//Optionally enable listeners
 		if(options.listeners) {
-			var self = this;
-
 			//Listen to own properties
 			this.on('change', patch);
 
@@ -33,8 +33,6 @@ module.exports = {
 			}
 
 		} else {
-			var self = this;
-			
 			//Listen to collections and emit events
 			var collectionNames = Object.keys(this._collections);
 			for(var i = 0; i < collectionNames.length; i++) {
@@ -65,6 +63,12 @@ module.exports = {
 			this._previousState = this.toJSON();
 		}
 		this.on('sync', initialSync);
+	},
+
+	// For when you want to alter a model, but not patch changes
+	updateSilently: function(data) {
+		this.set(data);
+		this._previousState = this.toJSON();
 	},
 
 	patch: _.debounce(function(options) {
