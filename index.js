@@ -37,25 +37,15 @@ module.exports = {
 			//Listen to collections and emit events
 			var collectionNames = Object.keys(this._collections);
 			for(var i = 0; i < collectionNames.length; i++) {
-				this.listenTo(this[collectionNames[i]], 'add change', function() {
+				this.listenTo(this[collectionNames[i]], 'add change remove', function() {
 					self.trigger('change');
-				});
-
-				/*
-				 * Ideally this is not necessary, see here: https://github.com/Starcounter-Jack/JSON-Patch/issues/65
-				 * You'll have to generate your own remove patches
-				 */
-				
-				this.listenTo(this[collectionNames[i]], 'remove', function() {
-					self.trigger('change');
-					self._previousState = self.toJSON(); //Silently update the previous state
 				});
 			}
 		}
 
 		//Clear event listeners
 		this.on('remove', function() {
-			self.off('change remove');
+			self.off('add change remove');
 			self.stopListening();
 		});	
 
