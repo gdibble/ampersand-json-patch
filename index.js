@@ -19,7 +19,8 @@ module.exports = {
 
 		//Save a previous version of this object
 		this._previousState = this.toJSON();
-		this._pendingPatches = [];
+		this._patchQueue = [];
+		this._persisting = false;
 
 		//Optionally enable listeners
 		if(options.listeners) {
@@ -72,7 +73,6 @@ module.exports = {
 	},
 
 	patch: _.debounce(function(options) {
-		var self = this;
 		
 		var patches = jsonpatch.compare(this._previousState, this.toJSON());
 
@@ -81,6 +81,44 @@ module.exports = {
 			return;
 		}
 
+		this._patchQueue.push({
+			patches: patches,
+			options: options,
+		});
+
+		this._persistQueue();
+
+		this._previousState = this.toJSON();
+	}, 500),
+
+	addToPatchQueue: function(item) {
+		this._patchQueue.push(item);
+		this._previousState = this.toJSON();
+		this._persistQueue();
+	},
+
+	_persistQueue: function() {
+		//Already persisting, don't invoke again
+		if(this._persisting) return;
+
+		//Persist items in order
+		if(this._patchQueue.length) {
+			this._persisting = true;
+			this._persistItem(this._patchQueue[0]);
+		}
+
+		return;
+	},
+
+	_persistItem: function(item) {
+		/*
+		for(var i = 0; i < this._patchQueue.length; i++) {
+			console.log(JSON.stringify(this._patchQueue[i].patches));
+		}
+		*/
+
+		var self = this;
+
 		var url;
 		if(_.isFunction(this.url)) url = this.url();
 		else url = this.url;
@@ -88,27 +126,33 @@ module.exports = {
 		$.ajax({
 			type: 'PATCH',
 			url: url,
-			data: JSON.stringify(patches),
+			data: JSON.stringify(item.patches),
 			processData: false,
 			contentType: 'application/json',
 			dataType: 'json',
 			success: function(response, status) {
 				self.trigger('sync', self, response);
 
-				if(typeof options.success == 'function') options.success(response);
+				if(typeof item.options.success == 'function') item.options.success(response);
+
+				// Remove this item from the queue and keep going
+				self._patchQueue.shift();
+
+				if(self._patchQueue.length) {
+					self._persistItem(self._patchQueue[0]);
+				} else {
+					self._persisting = false;
+				}
 
 				return;
 			},
 			error: function(xhr, type, error) {
 				self.trigger('error', self, error);
 
-				if(typeof options.error == 'function') options.error(error);
+				if(typeof item.options.error == 'function') item.options.error(error);
 
 				return;
 			},
 		});
-
-
-		self._previousState = self.toJSON();
-	}, 500)
+	}
 };
