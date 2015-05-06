@@ -139,7 +139,7 @@ module.exports = {
 			error: function(xhr, type, error) {
 				self.trigger('error', self, error);
 
-				if(typeof item.options.error == 'function') item.options.error(error);
+				if(typeof item.options.error == 'function') item.options.error(JSON.parse(xhr.response));
 
 				return;
 			},
