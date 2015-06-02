@@ -9,7 +9,8 @@
 
 var jsonpatch = require('fast-json-patch');
 var $ = require('browserify-zepto');
-var _ = require('lodash');
+var debounce = require('lodash.debounce');
+var isFunction = require('lodash.isfunction');
 
 module.exports = {
 	initPatcher: function(options) {
@@ -47,7 +48,7 @@ module.exports = {
 		this.on('remove', function() {
 			self.off('add change remove');
 			self.stopListening();
-		});	
+		});
 
 		var initialSync = function() {
 			this.off('sync', initialSync);
@@ -62,8 +63,8 @@ module.exports = {
 		this._previousState = this.toJSON();
 	},
 
-	patch: _.debounce(function(options) {
-		
+	patch: debounce(function(options) {
+
 		var patches = jsonpatch.compare(this._previousState, this.toJSON());
 
 		if(patches.length === 0) {
@@ -110,7 +111,7 @@ module.exports = {
 		var self = this;
 
 		var url;
-		if(_.isFunction(this.url)) url = this.url();
+		if(isFunction(this.url)) url = this.url();
 		else url = this.url;
 
 		$.ajax({
