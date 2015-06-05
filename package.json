@@ -25,6 +25,6 @@
     "browserify-zepto": "^1.1.4",
     "fast-json-patch": "^0.5.1",
     "lodash.debounce": "^3.1.0",
-    "lodash.debounce": "^3.0.5"
+    "lodash.isfunction": "^3.0.5"
   }
 }
